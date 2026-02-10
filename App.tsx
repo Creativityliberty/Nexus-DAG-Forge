@@ -5,11 +5,13 @@ import {
   Command, ArrowUpRight, Layers, Loader2, Cpu, Layers2, History, Download, MousePointer2, MessageSquare,
   Clock, ChevronRight, FileCode, Box, Cloud, Database, Zap, Info, Check, LayoutGrid, ShieldAlert,
   BarChart3, User, Send, Hash, Save, FolderOpen, Wand2, Monitor, Layout, Pause, AlertTriangle, ShieldCheck,
-  Search, ExternalLink, Globe, HardDrive
+  Search, ExternalLink, Globe, HardDrive, FileText, ClipboardList, Package, Share2, FileType
 } from 'lucide-react';
 import { Task, TaskStatus, SubTask, PriorityLevel, TaskComment, Artifact } from './types';
 import DAGVisualizer from './components/DAGVisualizer';
 import NeuralBoard from './components/NeuralBoard';
+import MissionRecap from './components/MissionRecap';
+import ArtifactRepository from './components/ArtifactRepository';
 import { generateWorkflow, enhanceTask, generateSubtasks } from './services/geminiService';
 
 const AGENTS = ['DevOps_Agent_01', 'Security_Kernel_X', 'Orchestrator_Node', 'Logic_Synthesizer'];
@@ -56,16 +58,17 @@ export default function App() {
   const [history, setHistory] = useState<Task[][]>([INITIAL_TASKS]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState('Neural edge computing pipeline for decentralized AI inference.');
   const [newCommentText, setNewCommentText] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
-  const [viewMode, setViewMode] = useState<'flow' | 'board'>('flow');
+  const [viewMode, setViewMode] = useState<'flow' | 'board' | 'recap' | 'artifacts'>('flow');
   const [lassoEnabled, setLassoEnabled] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployStep, setDeployStep] = useState(0);
   const [isEnhancingSidebar, setIsEnhancingSidebar] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'info' | 'error'} | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -159,7 +162,6 @@ export default function App() {
       setNotification({ message: 'Synthesis Error', type: 'error' });
     } finally {
       setIsGenerating(false);
-      setPrompt('');
     }
   };
 
@@ -176,13 +178,10 @@ export default function App() {
     }
   };
 
-  // Fix: Added handleSelectTask to manage multi-selection and sidebar opening logic.
   const handleSelectTask = useCallback((task: Task, isMultiSelect: boolean) => {
     if (isMultiSelect) {
       setSelectedTaskIds(prev => 
-        prev.includes(task.id) 
-          ? prev.filter(id => id !== task.id) 
-          : [...prev, task.id]
+        prev.includes(task.id) ? prev.filter(id => id !== task.id) : [...prev, task.id]
       );
     } else {
       setSelectedTaskIds([task.id]);
@@ -190,13 +189,11 @@ export default function App() {
     }
   }, []);
 
-  // Fix: Added handleSaveWorkflow to store the current task state in localStorage.
   const handleSaveWorkflow = useCallback(() => {
     localStorage.setItem('nexus_forge_workflow', JSON.stringify(tasks));
     setNotification({ message: 'Topology Snapshot Saved', type: 'success' });
   }, [tasks]);
 
-  // Fix: Added handleLoadWorkflow to retrieve and apply saved task state from localStorage.
   const handleLoadWorkflow = useCallback(() => {
     const saved = localStorage.getItem('nexus_forge_workflow');
     if (saved) {
@@ -206,12 +203,36 @@ export default function App() {
         pushToHistory(parsed);
         setNotification({ message: 'Topology Snapshot Loaded', type: 'success' });
       } catch (e) {
-        setNotification({ message: 'Load Error: Corrupt Data', type: 'error' });
+        setNotification({ message: 'Load Error', type: 'error' });
       }
-    } else {
-      setNotification({ message: 'No Snapshots Found', type: 'info' });
     }
   }, [pushToHistory]);
+
+  const exportMission = (format: 'json' | 'pdf' | 'img' | 'ld') => {
+    const data = {
+      mission: prompt,
+      timestamp: new Date().toISOString(),
+      tasks,
+      stats: {
+        effectiveness: Math.round((tasks.filter(t => t.status === TaskStatus.DONE).length / tasks.length) * 100),
+        totalTasks: tasks.length
+      }
+    };
+
+    if (format === 'json' || format === 'ld') {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `nexus_mission_${Date.now()}.${format}`;
+      link.click();
+    } else {
+      // Placeholder for PDF/IMG exports as they usually require complex libs like jspdf/html2canvas
+      window.print();
+    }
+    setNotification({ message: `Exporting as ${format.toUpperCase()}...`, type: 'info' });
+    setIsExportMenuOpen(false);
+  };
 
   return (
     <div className="flex h-screen bg-[#020617] text-slate-200 overflow-hidden font-sans relative">
@@ -266,12 +287,24 @@ export default function App() {
           <Workflow size={24} className="text-white" />
         </div>
         <div className="flex flex-col gap-5">
-          <button onClick={() => setViewMode('flow')} className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${viewMode === 'flow' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/40' : 'text-slate-500'}`}>
-            <Layers size={20} />
-          </button>
-          <button onClick={() => setViewMode('board')} className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${viewMode === 'board' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/40' : 'text-slate-500'}`}>
-            <LayoutGrid size={20} />
-          </button>
+          {[
+            { mode: 'flow', icon: Layers, label: 'FLOW' },
+            { mode: 'board', icon: LayoutGrid, label: 'BOARD' },
+            { mode: 'recap', icon: ClipboardList, label: 'RECAP' },
+            { mode: 'artifacts', icon: Package, label: 'ARTIFACTS' }
+          ].map(item => (
+            <button 
+              key={item.mode} 
+              onClick={() => setViewMode(item.mode as any)} 
+              className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all group relative ${viewMode === item.mode ? 'bg-blue-600/20 text-blue-400 border border-blue-500/40 shadow-lg' : 'text-slate-500 hover:text-white'}`}
+            >
+              <item.icon size={20} />
+              <div className="absolute left-16 bg-slate-900 border border-white/10 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest invisible group-hover:visible whitespace-nowrap z-50 shadow-2xl">
+                {item.label}_VIEW
+              </div>
+            </button>
+          ))}
+          <div className="w-8 h-px bg-white/5 my-2"></div>
           <button className="w-12 h-12 rounded-xl flex items-center justify-center text-slate-500 hover:text-white transition-all"><Database size={20} /></button>
           <button className="w-12 h-12 rounded-xl flex items-center justify-center text-slate-500 hover:text-white transition-all"><Settings size={20} /></button>
         </div>
@@ -295,9 +328,8 @@ export default function App() {
             <div className="hidden lg:flex gap-10 items-center">
               <div className="w-px h-10 bg-white/10 mx-2"></div>
               <div className="flex gap-8">
-                 <div className="text-center"><p className="text-[8px] font-black text-slate-500 uppercase">Active</p><p className="text-xl font-mono font-bold text-blue-400">{stats.active}</p></div>
+                 <div className="text-center"><p className="text-[8px] font-black text-slate-500 uppercase">Success_Rate</p><p className="text-xl font-mono font-bold text-blue-400">{Math.round((tasks.filter(t => t.status === TaskStatus.DONE).length / tasks.length) * 100)}%</p></div>
                  <div className="text-center"><p className="text-[8px] font-black text-slate-500 uppercase">Critical</p><p className="text-xl font-mono font-bold text-red-400">{stats.critical}</p></div>
-                 <div className="text-center"><p className="text-[8px] font-black text-slate-500 uppercase">Backlog</p><p className="text-xl font-mono font-bold text-slate-500">{stats.pending}</p></div>
               </div>
             </div>
           </div>
@@ -305,6 +337,34 @@ export default function App() {
           <div className="flex items-center gap-4">
              <button onClick={handleSaveWorkflow} className="p-3.5 rounded-2xl bg-white/5 text-slate-400 border border-white/5 hover:border-blue-500/50 transition-all" title="Save Snapshot"><Save size={18} /></button>
              <button onClick={handleLoadWorkflow} className="p-3.5 rounded-2xl bg-white/5 text-slate-400 border border-white/5 hover:border-blue-500/50 transition-all" title="Load Snapshot"><FolderOpen size={18} /></button>
+             
+             <div className="relative">
+                <button 
+                  onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                  className="px-8 py-4 rounded-2xl bg-slate-900 border border-white/5 text-[10px] font-black uppercase tracking-[0.2em] hover:border-blue-500/50 transition-all flex items-center gap-3 shadow-xl"
+                >
+                   <Download size={16} className="text-blue-500" /> EXPORT
+                </button>
+                {isExportMenuOpen && (
+                  <div className="absolute top-16 right-0 w-48 glass-heavy rounded-2xl border border-white/10 p-2 shadow-2xl z-[200] animate-in fade-in slide-in-from-top-2 duration-300">
+                     {[
+                       { id: 'json', label: 'JSON_MANIFEST', icon: FileType },
+                       { id: 'ld', label: 'LINKED_DATA', icon: Share2 },
+                       { id: 'pdf', label: 'PDF_REPORT', icon: FileText },
+                       { id: 'img', label: 'DAG_SNAPSHOT', icon: Globe }
+                     ].map(f => (
+                       <button 
+                         key={f.id} 
+                         onClick={() => exportMission(f.id as any)}
+                         className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 text-[9px] font-black text-slate-400 uppercase tracking-widest transition-all"
+                       >
+                         <f.icon size={14} className="text-blue-500" /> {f.label}
+                       </button>
+                     ))}
+                  </div>
+                )}
+             </div>
+
              <button onClick={handleDeploy} className="px-10 py-4 rounded-2xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-500 transition-all flex items-center gap-3 shadow-[0_0_30px_rgba(37,99,235,0.3)]">
                 <Globe size={16} /> DEPLOY_CORE
              </button>
@@ -312,10 +372,17 @@ export default function App() {
         </header>
 
         <div className="flex-1 flex flex-col gap-6 min-h-0">
-          {viewMode === 'flow' ? (
+          {viewMode === 'flow' && (
             <DAGVisualizer tasks={tasks} onSelectTask={handleSelectTask} selectedTaskIds={selectedTaskIds} lassoEnabled={lassoEnabled} />
-          ) : (
+          )}
+          {viewMode === 'board' && (
             <NeuralBoard tasks={tasks} onSelectTask={handleSelectTask} />
+          )}
+          {viewMode === 'recap' && (
+            <MissionRecap tasks={tasks} originalPrompt={prompt} />
+          )}
+          {viewMode === 'artifacts' && (
+            <ArtifactRepository tasks={tasks} />
           )}
           
           {/* AI Command Core */}
@@ -342,9 +409,9 @@ export default function App() {
           </div>
         </div>
 
-        {/* Multi-Selection Control Bar (Remains visible when items selected) */}
+        {/* Selection Tool Bar */}
         {selectedTaskIds.length > 0 && (
-          <footer className="h-20 glass-heavy rounded-3xl border border-blue-500/40 flex items-center px-10 gap-8 shadow-2xl animate-in slide-in-from-bottom-4 duration-500 absolute bottom-10 left-1/2 -translate-x-1/2 z-[100]">
+          <footer className="h-20 glass-heavy rounded-3xl border border-blue-500/40 flex items-center px-10 gap-8 shadow-2xl absolute bottom-10 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-4 duration-500">
              <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Selection: {selectedTaskIds.length} Nodes</span>
              <div className="flex gap-4">
                <button onClick={() => handleBulkUpdateStatus(TaskStatus.RUNNING)} className="px-4 py-2 rounded-xl bg-blue-600/10 text-blue-400 border border-blue-500/20 flex items-center gap-2 text-[10px] font-black uppercase"><Play size={14} fill="currentColor" /> Play</button>
@@ -359,14 +426,14 @@ export default function App() {
         )}
       </main>
 
-      {/* Sidebar - Enhanced Agent Panel */}
+      {/* Sidebar - Agent Details */}
       <aside className={`fixed inset-y-0 right-0 w-[650px] glass-heavy border-l border-white/10 z-[100] transform transition-transform duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-2xl ${isSidebarOpen && selectedTaskIds.length === 1 ? 'translate-x-0' : 'translate-x-full'}`}>
         {primarySelectedTask && (
           <div className="h-full flex flex-col">
             <div className="p-10 border-b border-white/5 flex justify-between items-center bg-slate-950/20">
               <div className="flex items-center gap-5">
                 <div className="w-14 h-14 rounded-2xl bg-blue-600/10 text-blue-500 flex items-center justify-center border border-blue-500/20"><Box size={28}/></div>
-                <div><h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">Agent_Interface</h2><p className="text-[9px] font-mono text-slate-500 uppercase mt-1">Registry Context</p></div>
+                <div><h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">Node_Analysis</h2><p className="text-[9px] font-mono text-slate-500 uppercase mt-1">Registry Context</p></div>
               </div>
               <button onClick={() => setIsSidebarOpen(false)} className="w-12 h-12 rounded-2xl hover:bg-white/5 text-slate-500 flex items-center justify-center"><X size={24}/></button>
             </div>
@@ -408,7 +475,7 @@ export default function App() {
                  </div>
               </section>
 
-              {/* Artifacts - The agent outputs */}
+              {/* Artifacts - Individual Node output */}
               <section className="space-y-8">
                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3"><FileCode size={16} className="text-purple-400" /> Neural_Artifacts</h4>
                 <div className="grid grid-cols-2 gap-4">
@@ -416,14 +483,11 @@ export default function App() {
                     <div key={art.id} className="p-6 rounded-[2rem] bg-slate-900/40 border border-white/5 space-y-4 group hover:border-purple-500/30 transition-all">
                       <div className="flex items-center gap-3">
                          <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/20"><Terminal size={18}/></div>
-                         <div><span className="text-[10px] font-black text-white uppercase block">{art.label}</span><span className="text-[8px] font-mono text-slate-600 uppercase">Size: 1.2kb</span></div>
+                         <div><span className="text-[10px] font-black text-white uppercase block">{art.label}</span></div>
                       </div>
                       <div className="bg-black/40 rounded-xl p-4 font-mono text-[10px] text-slate-500 overflow-hidden line-clamp-4 leading-relaxed">
                         {art.content}
                       </div>
-                      <button className="w-full py-3 text-[9px] font-black text-purple-400 uppercase tracking-widest border border-purple-500/10 rounded-xl hover:bg-purple-500/10 transition-all flex items-center justify-center gap-2">
-                        <Download size={12} /> Inspect_Source
-                      </button>
                     </div>
                   ))}
                   {!primarySelectedTask.artifacts?.length && <div className="col-span-2 text-center p-12 border border-dashed border-white/10 rounded-[2rem] text-slate-600 uppercase text-[10px] font-black">Waiting for agent output...</div>}
