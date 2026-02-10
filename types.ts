@@ -21,6 +21,13 @@ export interface TaskComment {
   timestamp: string;
 }
 
+export interface Artifact {
+  id: string;
+  type: 'code' | 'log' | 'json' | 'link';
+  label: string;
+  content: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -32,6 +39,7 @@ export interface Task {
   lastUpdated?: string;
   subtasks?: SubTask[];
   comments?: TaskComment[];
+  artifacts?: Artifact[];
   priority?: PriorityLevel;
 }
 
