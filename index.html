@@ -10,99 +10,102 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://esm.sh/reactflow/dist/style.css">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              nexus: {
+                dark: '#020617',
+                light: '#f8fafc',
+                accent: '#3b82f6',
+              }
+            }
+          }
+        }
+      }
+    </script>
     <style>
       :root {
-        --bg-color: #020617;
-        --accent-primary: #3b82f6;
-        --accent-secondary: #6366f1;
+        --transition-speed: 0.5s;
       }
       body {
         font-family: 'Plus Jakarta Sans', sans-serif;
-        background-color: var(--bg-color);
-        color: #f8fafc;
         margin: 0;
         overflow: hidden;
+        transition: background-color var(--transition-speed), color var(--transition-speed);
       }
       
+      /* Glassmorphism Logic */
       .glass-heavy {
-        background: rgba(10, 15, 30, 0.85);
         backdrop-filter: blur(40px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: background var(--transition-speed), border var(--transition-speed), box-shadow var(--transition-speed);
       }
 
+      .dark .glass-heavy {
+        background: rgba(10, 15, 30, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      }
+
+      .light .glass-heavy {
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+      }
+
+      /* Animated Selection Pulse */
       @keyframes selection-pulse {
         0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.1), 0 0 0 2px rgba(59, 130, 246, 0.4); }
         50% { box-shadow: 0 0 50px rgba(59, 130, 246, 0.3), 0 0 0 4px rgba(59, 130, 246, 0.6); }
       }
+      .node-selected-fx { animation: selection-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 
-      .node-selected-fx {
-        animation: selection-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-      }
-
-      .iridescent-border {
-        position: relative;
-        border-radius: inherit;
-      }
+      /* Iridescent Effects */
+      .iridescent-border { position: relative; border-radius: inherit; }
       .iridescent-border::before {
-        content: "";
-        position: absolute;
-        inset: -1.5px;
+        content: ""; position: absolute; inset: -1.5px;
         background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.4), transparent, rgba(99, 102, 241, 0.4), transparent);
         background-size: 300% 300%;
         animation: iridescence 6s linear infinite;
-        border-radius: inherit;
-        z-index: -1;
+        border-radius: inherit; z-index: -1;
         mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-        mask-composite: exclude;
-        pointer-events: none;
+        mask-composite: exclude; pointer-events: none;
       }
-
       @keyframes iridescence {
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
       }
 
-      .react-flow__edge-path {
-        stroke-width: 3;
-        stroke: rgba(148, 163, 184, 0.1);
-        transition: stroke 0.5s ease;
-      }
-      
+      /* React Flow Styling */
+      .react-flow__edge-path { stroke-width: 3; stroke: rgba(148, 163, 184, 0.1); transition: stroke 0.5s ease; }
       .react-flow__edge.animated-liquid .react-flow__edge-path {
-        stroke-dasharray: 10;
-        animation: liquidFlow 1s linear infinite;
-        stroke: #3b82f6;
-        filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
+        stroke-dasharray: 10; animation: liquidFlow 1s linear infinite;
+        stroke: #3b82f6; filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
       }
-
-      @keyframes liquidFlow {
-        from { stroke-dashoffset: 20; }
-        to { stroke-dashoffset: 0; }
-      }
+      @keyframes liquidFlow { from { stroke-dashoffset: 20; } to { stroke-dashoffset: 0; } }
 
       .scanline {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
         background: linear-gradient(to bottom, transparent 50%, rgba(59, 130, 246, 0.01) 50%);
-        background-size: 100% 4px;
-        z-index: 1000;
-        pointer-events: none;
-        opacity: 0.5;
+        background-size: 100% 4px; z-index: 1000; pointer-events: none; opacity: 0.5;
       }
 
+      /* Custom Scrollbars */
       ::-webkit-scrollbar { width: 4px; }
-      ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+      ::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.2); border-radius: 10px; }
       .no-scrollbar::-webkit-scrollbar { display: none; }
-      .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.2); border-radius: 10px; }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.4); }
 
       @media (max-width: 640px) {
         h1 { font-size: 1.25rem !important; }
         h2 { font-size: 1.125rem !important; }
         .glass-heavy { backdrop-filter: blur(20px) saturate(150%); }
       }
+
+      /* Theme Transitions */
+      * { transition: background-color 0.3s ease, border-color 0.3s ease, color 0.1s ease; }
     </style>
   <script type="importmap">
 {
@@ -118,7 +121,7 @@
 }
 </script>
 </head>
-  <body>
+  <body class="dark">
     <div class="scanline"></div>
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>

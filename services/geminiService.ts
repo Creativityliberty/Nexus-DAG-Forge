@@ -155,5 +155,6 @@ export const chatWithNode = async (task: Task, userMessage: string): Promise<str
       { role: 'user', parts: [{ text: userMessage }] }
     ]
   });
-  return response.text;
+  // Added fallback for response.text as it is string | undefined
+  return response.text || "Communication relay failure. Node context lost.";
 };
