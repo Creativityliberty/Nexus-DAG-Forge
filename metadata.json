@@ -1,0 +1,5 @@
+{
+  "name": "Nexus DAG Forge",
+  "description": "A neo-modern task orchestration visualizer and generator. Use AI to build complex Directed Acyclic Graphs (DAGs), monitor task states, and manage dependencies with a sleek, glassmorphic interface.",
+  "requestFramePermissions": []
+}
