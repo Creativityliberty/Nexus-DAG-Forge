@@ -11,10 +11,10 @@
   "dependencies": {
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "lucide-react": "^0.475.0",
     "@google/genai": "^1.40.0",
     "reactflow": "^11.11.4",
-    "dagre": "^0.8.5"
+    "dagre": "^0.8.5",
+    "lucide-react": "^0.563.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
