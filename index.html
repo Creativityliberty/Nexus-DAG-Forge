@@ -94,6 +94,15 @@
       ::-webkit-scrollbar { width: 4px; }
       ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
       .no-scrollbar::-webkit-scrollbar { display: none; }
+      .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.2); border-radius: 10px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.4); }
+
+      @media (max-width: 640px) {
+        h1 { font-size: 1.25rem !important; }
+        h2 { font-size: 1.125rem !important; }
+        .glass-heavy { backdrop-filter: blur(20px) saturate(150%); }
+      }
     </style>
   <script type="importmap">
 {

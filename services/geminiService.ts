@@ -7,7 +7,6 @@ const stripMarkdown = (text: string) => {
 };
 
 export const generateWorkflow = async (prompt: string): Promise<Task[]> => {
-  // Always create a new GoogleGenAI instance right before making an API call to ensure it always uses the most up-to-date API key.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-preview',
@@ -67,7 +66,6 @@ export const generateWorkflow = async (prompt: string): Promise<Task[]> => {
 };
 
 export const enhanceTask = async (partialTask: Partial<Task>): Promise<Partial<Task>> => {
-  // Always create a new GoogleGenAI instance right before making an API call to ensure it always uses the most up-to-date API key.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const prompt = `You are a technical assistant. Enhance this task specification.
   Current Context:
@@ -115,7 +113,6 @@ export const enhanceTask = async (partialTask: Partial<Task>): Promise<Partial<T
 };
 
 export const generateSubtasks = async (task: Task): Promise<SubTask[]> => {
-  // Always create a new GoogleGenAI instance right before making an API call to ensure it always uses the most up-to-date API key.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-preview',
@@ -145,4 +142,18 @@ export const generateSubtasks = async (task: Task): Promise<SubTask[]> => {
     console.error("Failed to generate subtasks:", e);
     return [];
   }
+};
+
+// NEW FUNCTION: Chat with a specific node context
+export const chatWithNode = async (task: Task, userMessage: string): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const response = await ai.models.generateContent({
+    model: "gemini-3-pro-preview",
+    contents: [
+      { role: 'user', parts: [{ text: `You are ${task.owner || 'System_Automaton'}, the owner of the node "${task.title}". Task ID: ${task.id}. Status: ${task.status}. Description: ${task.description}. Act as a hyper-intelligent, technical system agent.` }] },
+      { role: 'model', parts: [{ text: "Context loaded. Awaiting input." }] },
+      { role: 'user', parts: [{ text: userMessage }] }
+    ]
+  });
+  return response.text;
 };
