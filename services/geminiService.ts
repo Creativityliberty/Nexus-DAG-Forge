@@ -1,24 +1,25 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { Task, TaskStatus, SubTask } from "../types";
+import { Task, TaskStatus } from "../types";
+
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const stripMarkdown = (text: string) => {
   return text.replace(/```json\n?|```/g, "").trim();
 };
 
 export const generateWorkflow = async (prompt: string): Promise<Task[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-preview',
-    contents: `You are a world-class systems architect and DevOps engineer. 
-    Create a professional Directed Acyclic Graph (DAG) for: "${prompt}".
+    contents: `Act as a world-class Lead Orchestrator Architect. Your task is to design a high-performance Directed Acyclic Graph (DAG) for the following infrastructure request: "${prompt}".
     
     Requirements:
-    - 6-10 logical nodes.
-    - Each node needs 3-5 granular subtasks (morsels).
-    - Strategic priorities (LOW, MEDIUM, HIGH).
-    - Clear dependencies (use the node IDs).
-    - Tech-heavy titles and descriptions.`,
+    - 6 to 10 logical nodes.
+    - Each node must have an owner (agent style: Security_Kernel, Logic_Unit, DevOps_Stream, etc).
+    - Clear and logical dependencies (don't create circular links).
+    - 3 to 5 granular subtasks per node.
+    - Professional, punchy titles and technical descriptions.
+    - Strategic priorities (LOW, MEDIUM, HIGH).`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -30,10 +31,7 @@ export const generateWorkflow = async (prompt: string): Promise<Task[]> => {
             title: { type: Type.STRING },
             description: { type: Type.STRING },
             status: { type: Type.STRING, enum: Object.values(TaskStatus) },
-            dependencies: { 
-              type: Type.ARRAY,
-              items: { type: Type.STRING }
-            },
+            dependencies: { type: Type.ARRAY, items: { type: Type.STRING } },
             owner: { type: Type.STRING },
             priority: { type: Type.STRING, enum: ["LOW", "MEDIUM", "HIGH"] },
             subtasks: {
@@ -49,75 +47,31 @@ export const generateWorkflow = async (prompt: string): Promise<Task[]> => {
               }
             }
           },
-          required: ["id", "title", "description", "status", "dependencies", "priority", "subtasks"],
-          propertyOrdering: ["id", "title", "description", "status", "dependencies", "priority", "subtasks"]
+          required: ["id", "title", "description", "status", "dependencies", "priority", "subtasks"]
         }
       }
     }
   });
 
   try {
-    const text = stripMarkdown(response.text || '[]');
-    return JSON.parse(text);
+    const text = response.text || '[]';
+    return JSON.parse(stripMarkdown(text));
   } catch (e) {
-    console.error("Failed to parse AI workflow response:", e);
+    console.error("Workflow parsing error:", e);
     return [];
   }
 };
 
-export const enhanceTask = async (partialTask: Partial<Task>): Promise<Partial<Task>> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `You are a technical assistant. Enhance this task specification.
-  Current Context:
-  Title: ${partialTask.title || 'Untitled'}
-  Description: ${partialTask.description || 'N/A'}
-  
-  Provide a highly professional technical title, a deep technical objective, a logical priority (LOW/MEDIUM/HIGH), 
-  and exactly 4 logical sub-steps (morsels) that would be required to complete this task.`;
-
+export const optimizeWorkflow = async (tasks: Task[]): Promise<Task[]> => {
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-preview',
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          title: { type: Type.STRING },
-          description: { type: Type.STRING },
-          priority: { type: Type.STRING, enum: ["LOW", "MEDIUM", "HIGH"] },
-          subtasks: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                id: { type: Type.STRING },
-                title: { type: Type.STRING },
-                completed: { type: Type.BOOLEAN }
-              }
-            }
-          }
-        },
-        required: ["title", "description", "priority", "subtasks"]
-      }
-    }
-  });
-
-  try {
-    const text = stripMarkdown(response.text || '{}');
-    return JSON.parse(text);
-  } catch (e) {
-    console.error("Failed to parse AI enhancement response:", e);
-    return partialTask;
-  }
-};
-
-export const generateSubtasks = async (task: Task): Promise<SubTask[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
-    contents: `Generate 4-6 granular, technical sub-steps for this task: "${task.title}".
-    Task Description: ${task.description}`,
+    contents: `Analyze this DAG workflow and optimize it for maximum parallelism and efficiency.
+    You can:
+    - Re-order dependencies to reduce bottlenecks.
+    - Refine priorities based on dependency chains.
+    - Optimize node titles and descriptions for technical clarity.
+    
+    Current Workflow: ${JSON.stringify(tasks)}`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -127,34 +81,71 @@ export const generateSubtasks = async (task: Task): Promise<SubTask[]> => {
           properties: {
             id: { type: Type.STRING },
             title: { type: Type.STRING },
-            completed: { type: Type.BOOLEAN }
-          },
-          required: ["id", "title", "completed"]
+            description: { type: Type.STRING },
+            status: { type: Type.STRING },
+            dependencies: { type: Type.ARRAY, items: { type: Type.STRING } },
+            owner: { type: Type.STRING },
+            priority: { type: Type.STRING },
+            subtasks: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING }, title: { type: Type.STRING }, completed: { type: Type.BOOLEAN } } } }
+          }
         }
       }
     }
   });
 
   try {
-    const text = stripMarkdown(response.text || '[]');
-    return JSON.parse(text);
+    return JSON.parse(stripMarkdown(response.text || '[]'));
   } catch (e) {
-    console.error("Failed to generate subtasks:", e);
-    return [];
+    return tasks;
   }
 };
 
-// NEW FUNCTION: Chat with a specific node context
-export const chatWithNode = async (task: Task, userMessage: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+export const generateMissionReport = async (tasks: Task[], prompt: string): Promise<string> => {
   const response = await ai.models.generateContent({
-    model: "gemini-3-pro-preview",
+    model: 'gemini-3-pro-preview',
+    contents: `Provide an executive summary and architectural analysis of the following workflow designed for: "${prompt}".
+    Analyze:
+    1. Critical path nodes.
+    2. Dependency health.
+    3. Potential resource bottlenecks.
+    Workflow: ${JSON.stringify(tasks)}
+    Use professional markdown formatting.`,
+  });
+  return response.text || "Report generation failed.";
+};
+
+export const generateNodeDocs = async (task: Task): Promise<string> => {
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: `Generate professional technical documentation for this orchestration node:
+    Node ID: ${task.id}
+    Title: ${task.title}
+    Spec: ${task.description}
+    Priority: ${task.priority}
+    Subtasks: ${JSON.stringify(task.subtasks)}
+    
+    Format as Markdown with sections for 'Architecture', 'Operational Procedure', and 'Risk Assessment'.`,
+  });
+  return response.text || "Documentation failure.";
+};
+
+export const chatWithNode = async (task: Task, userMessage: string): Promise<string> => {
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
     contents: [
-      { role: 'user', parts: [{ text: `You are ${task.owner || 'System_Automaton'}, the owner of the node "${task.title}". Task ID: ${task.id}. Status: ${task.status}. Description: ${task.description}. Act as a hyper-intelligent, technical system agent.` }] },
-      { role: 'model', parts: [{ text: "Context loaded. Awaiting input." }] },
+      { role: 'user', parts: [{ text: `You are the specialized AI agent: "${task.owner || 'Nexus_Automaton'}". You own the system node: "${task.title}" (Status: ${task.status}).
+      Objective: Answer technical questions or process instructions related to this node. Be concise, professional, and technical.` }] },
+      { role: 'model', parts: [{ text: "Synthesizer online. Ready to assist with node operations." }] },
       { role: 'user', parts: [{ text: userMessage }] }
     ]
   });
-  // Added fallback for response.text as it is string | undefined
-  return response.text || "Communication relay failure. Node context lost.";
+  return response.text || "Transmission interrupted.";
+};
+
+export const quickRefine = async (text: string): Promise<string> => {
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: `Professionalize this technical text to be more concise and punchy: "${text}". Return only the refined text.`,
+  });
+  return response.text?.trim() || text;
 };

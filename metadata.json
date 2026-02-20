@@ -1,5 +1,7 @@
 {
-  "name": "Nexus DAG Forge",
-  "description": "A neo-modern task orchestration visualizer and generator. Use AI to build complex Directed Acyclic Graphs (DAGs), monitor task states, and manage dependencies with a sleek, glassmorphic interface.",
-  "requestFramePermissions": []
+  "name": "Nexus Sovereign | Intelligent DAG Forge",
+  "description": "Hyper-premium task orchestration visualizer powered by Gemini 3. Advanced DAG generation, real-time node simulation, and AI-driven architectural audit.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }

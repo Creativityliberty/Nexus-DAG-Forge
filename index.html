@@ -20,7 +20,11 @@
                 dark: '#020617',
                 light: '#f8fafc',
                 accent: '#3b82f6',
+                purple: '#8b5cf6',
               }
+            },
+            animation: {
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             }
           }
         }
@@ -39,36 +43,36 @@
       
       /* Glassmorphism Logic */
       .glass-heavy {
-        backdrop-filter: blur(40px) saturate(180%);
+        backdrop-filter: blur(40px) saturate(200%);
         transition: background var(--transition-speed), border var(--transition-speed), box-shadow var(--transition-speed);
       }
 
       .dark .glass-heavy {
-        background: rgba(10, 15, 30, 0.85);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        background: rgba(10, 15, 30, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
       }
 
       .light .glass-heavy {
-        background: rgba(255, 255, 255, 0.7);
+        background: rgba(255, 255, 255, 0.85);
         border: 1px solid rgba(15, 23, 42, 0.1);
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
       }
 
       /* Animated Selection Pulse */
       @keyframes selection-pulse {
-        0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.1), 0 0 0 2px rgba(59, 130, 246, 0.4); }
-        50% { box-shadow: 0 0 50px rgba(59, 130, 246, 0.3), 0 0 0 4px rgba(59, 130, 246, 0.6); }
+        0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.15), 0 0 0 2px rgba(59, 130, 246, 0.4); }
+        50% { box-shadow: 0 0 60px rgba(59, 130, 246, 0.4), 0 0 0 4px rgba(59, 130, 246, 0.7); }
       }
       .node-selected-fx { animation: selection-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 
       /* Iridescent Effects */
       .iridescent-border { position: relative; border-radius: inherit; }
       .iridescent-border::before {
-        content: ""; position: absolute; inset: -1.5px;
-        background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.4), transparent, rgba(99, 102, 241, 0.4), transparent);
+        content: ""; position: absolute; inset: -1px;
+        background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent, rgba(139, 92, 246, 0.3), transparent);
         background-size: 300% 300%;
-        animation: iridescence 6s linear infinite;
+        animation: iridescence 8s linear infinite;
         border-radius: inherit; z-index: -1;
         mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
         mask-composite: exclude; pointer-events: none;
@@ -79,49 +83,46 @@
         100% { background-position: 0% 50%; }
       }
 
-      /* React Flow Styling */
-      .react-flow__edge-path { stroke-width: 3; stroke: rgba(148, 163, 184, 0.1); transition: stroke 0.5s ease; }
+      /* React Flow Edge Styling */
+      .react-flow__edge-path { stroke-width: 3; stroke: rgba(148, 163, 184, 0.15); transition: stroke 0.5s ease; }
       .react-flow__edge.animated-liquid .react-flow__edge-path {
-        stroke-dasharray: 10; animation: liquidFlow 1s linear infinite;
-        stroke: #3b82f6; filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
+        stroke-dasharray: 12; 
+        animation: liquidFlow 0.8s linear infinite;
+        stroke: #3b82f6; 
+        filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.8));
       }
-      @keyframes liquidFlow { from { stroke-dashoffset: 20; } to { stroke-dashoffset: 0; } }
+      @keyframes liquidFlow { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
 
       .scanline {
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: linear-gradient(to bottom, transparent 50%, rgba(59, 130, 246, 0.01) 50%);
-        background-size: 100% 4px; z-index: 1000; pointer-events: none; opacity: 0.5;
+        background: linear-gradient(to bottom, transparent 50%, rgba(59, 130, 246, 0.02) 50%);
+        background-size: 100% 4px; z-index: 9999; pointer-events: none; opacity: 0.5;
       }
 
       /* Custom Scrollbars */
-      ::-webkit-scrollbar { width: 4px; }
-      ::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.2); border-radius: 10px; }
+      ::-webkit-scrollbar { width: 5px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.3); border-radius: 10px; }
       .no-scrollbar::-webkit-scrollbar { display: none; }
 
-      @media (max-width: 640px) {
-        h1 { font-size: 1.25rem !important; }
-        h2 { font-size: 1.125rem !important; }
-        .glass-heavy { backdrop-filter: blur(20px) saturate(150%); }
-      }
-
-      /* Theme Transitions */
-      * { transition: background-color 0.3s ease, border-color 0.3s ease, color 0.1s ease; }
+      /* Transitions */
+      * { transition: background-color 0.3s ease-out, border-color 0.3s ease-out, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
-    "reactflow": "https://esm.sh/reactflow@^11.11.4",
-    "dagre": "https://esm.sh/dagre@^0.8.5",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0"
-  }
-}
-</script>
-</head>
-  <body class="dark">
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@^19.2.4",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+        "react/": "https://esm.sh/react@^19.2.4/",
+        "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
+        "reactflow": "https://esm.sh/reactflow@^11.11.4",
+        "dagre": "https://esm.sh/dagre@^0.8.5",
+        "lucide-react": "https://esm.sh/lucide-react@^0.563.0"
+      }
+    }
+    </script>
+  </head>
+  <body class="dark bg-slate-950">
     <div class="scanline"></div>
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>

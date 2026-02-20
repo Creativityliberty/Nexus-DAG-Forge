@@ -17,9 +17,11 @@ import {
 
 interface ArtifactRepositoryProps {
   tasks: Task[];
+  // Fix: Added theme prop to interface to satisfy App.tsx requirements
+  theme: 'dark' | 'light';
 }
 
-const ArtifactRepository: React.FC<ArtifactRepositoryProps> = ({ tasks }) => {
+const ArtifactRepository: React.FC<ArtifactRepositoryProps> = ({ tasks, theme }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'code' | 'log' | 'json' | 'link'>('all');
   const [expandedArtifact, setExpandedArtifact] = useState<(Artifact & { parentTask: string, parentId: string }) | null>(null);
